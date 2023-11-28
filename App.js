@@ -10,6 +10,10 @@ const IGBO_API_URL = "https://api-inference.huggingface.co/models/AstralZander/i
 const YORUBA_API_URL = "https://api-inference.huggingface.co/models/steja/whisper-small-yoruba"
 const HAUSA_API_URL = "https://api-inference.huggingface.co/models/DrishtiSharma/whisper-large-v2-hausa"
 
+const YOR_ENG_URL = "https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-yo-en"
+const HAU_ENG_URL = "https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-ha-en"
+const IGB_ENG_URL = "https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-ig-en"
+
 const languages = ["Hausa", "Yoruba", "Igbo"]
 const recordingsDir = FileSystem.documentDirectory + 'recordings/'
 
@@ -90,43 +94,71 @@ export default function App() {
     }else{
       showToast("Please Select a Language First")
     }
-    // try {
-    // //   console.log("Sending Request")
-    // //   console.log(language)
-    //   setLoading(true)
-
-    //   if(REQ_URL != undefined){
-    //     const response = await FileSystem.uploadAsync(REQ_URL, fileUri, {
-    //       fieldName: 'file',
-    //       httpMethod: 'POST',
-    //       uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-    //       headers: { 
-    //         Authorization: "Bearer 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", 
-    //        }
-    //     });
-    //     console.log(response.body)
-    //     if(response.status == 503){
-    //       setLoading(false)
-    //       setModalVisible(false)
-    //       showToast(`Model Loading Please Wait`)
-    //     }
-    //     let result = response.body
-    //     let txtFormat = result.slice(0, result.length);
-    //     let JsonFormat = JSON.parse(txtFormat)
-
-    //     setTranscript(JsonFormat.text)  
-    //     setLoading(false)
-    //   }else{
-    //     showToast("Please Select a Language First")
-    //   }
-    // } catch (error) {
-    //   console.log(error);
-    // }
-
-    
+    try {
+    //   console.log("Sending Request")
+    //   console.log(language)
+      setLoading(true)
       setModalVisible(true)
+      if(REQ_URL != undefined){
+        const response = await FileSystem.uploadAsync(REQ_URL, fileUri, {
+          fieldName: 'file',
+          httpMethod: 'POST',
+          uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+          headers: { 
+            Authorization: "Bearer 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", 
+           }
+        });
+        console.log(response.body)
+        if(response.status == 503){
+          setLoading(false)
+          setModalVisible(false)
+          showToast(`Model Loading Please Wait`)
+        }
+        let result = response.body
+        let txtFormat = result.slice(0, result.length);
+        let JsonFormat = JSON.parse(txtFormat)
+
+        setTranscript(JsonFormat.text)  
+        setLoading(false)
+      }else{
+        showToast("Please Select a Language First")
+      }
+    } catch (error) {
+      console.log(error);
+    }
 
   }
+
+
+  async function getTranslation(data) {
+      var REQ_URL
+      if (language){
+        if(language == "Hausa"){
+          REQ_URL = HAU_ENG_URL
+        }else if(language == "Yoruba"){
+          REQ_URL = YOR_ENG_URL
+        }else if(language == "Igbo"){
+          REQ_URL = IGB_ENG_URL
+        }
+      }
+    const response = await fetch(
+      REQ_URL,
+      {
+        headers: { Authorization: "Bearer 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" },
+        method: "POST",
+        body: data,
+      }
+    );
+    if(response.status == 503){
+      setLoading(false)
+      showToast(`Model Loading Please Wait`)
+    }
+    const result = await response.json();
+    console.log(result)
+    if(result[0].translation_text){  
+      setTranscript(result[0].translation_text)
+    }
+}
 
   async function stopRecording() {
     try{
@@ -209,7 +241,7 @@ export default function App() {
                           setModalVisible(!modalVisible)
                           setTranscript(null)
                           }}>
-                        <Image source={require('./assets/cancel.png')}/>
+                        <Image style={styles.closeIcon} source={require('./assets/cancel.png')}/>
                       </Pressable>
                     </View>
                     <TextInput
@@ -222,15 +254,14 @@ export default function App() {
                       <Pressable
                         style={styles.buttonTranslate}
                         onPress={() => {
-                          setModalVisible(!modalVisible)
-                          setTranscript(null)
+                          getTranslation(transcript)
                           }}>
                         <Text style={styles.textStyle}>Translate</Text>
                       </Pressable>
                   </>
                 :
                   <View>
-                    <Text>Sending Request</Text>
+                    <Image style={styles.loadingImg} source={require('./assets/work-in-progress.gif')}/>
                   </View>
                 }
               </View>
@@ -324,20 +355,30 @@ const styles = StyleSheet.create({
     width: "100%"
   },
   buttonClose: {
-    backgroundColor: '#2196F3',
     padding: 10,
-    borderRadius: 5
+    borderRadius: 5,
+    width: 20,
+    marginRight: 10
+  },
+  closeIcon:{
+    width: 20,
+    height: 20
   },
   buttonTranslate: {
     backgroundColor: '#00A15B',
     padding: 10,
     borderRadius: 5, 
-    width: '95%'
+    width: '95%',
+    marginBottom: 20
   },
   textStyle: {
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  loadingImg: {
+    width: 50,
+    height: 50
   },
 });
 
