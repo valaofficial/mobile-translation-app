@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {Audio} from 'expo-av'
 import * as FileSystem from 'expo-file-system'
-import { StyleSheet, TouchableOpacity, Text, View, Image, ToastAndroid } from 'react-native';
+import { StyleSheet, TouchableOpacity, Text, View, Image, ToastAndroid, Modal, TextInput, Pressable } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 
 
@@ -22,11 +22,13 @@ const ensureDirExists = async () =>{
 }
 
 export default function App() {
+  const [loading, setLoading] = useState(null)
   const [recording, setRecording] = useState(null)
   const [isRecording, setIsRecording] = useState(false)
   const [transcript, setTranscript] = useState(null)
   const [audioPermissions, setAudioPermissions] = useState(null)
   const [language, setLanguage] = useState(null)
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     async function getPermission() {
@@ -88,33 +90,42 @@ export default function App() {
     }else{
       showToast("Please Select a Language First")
     }
-    try {
-      console.log("Sending Request")
-      console.log(language)
-      if(REQ_URL != undefined){
-        const response = await FileSystem.uploadAsync(REQ_URL, fileUri, {
-          fieldName: 'file',
-          httpMethod: 'POST',
-          uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-          headers: { 
-            Authorization: "Bearer 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", 
-           }
-        });
-        console.log(response.body)
-        if(response.status == 503){
-          showToast(`Model Loading Please Wait`)
-        }
-        let result = response.body
-        let txtFormat = result.slice(0, result.length);
-        let JsonFormat = JSON.parse(txtFormat)
+    // try {
+    // //   console.log("Sending Request")
+    // //   console.log(language)
+    //   setLoading(true)
 
-        setTranscript(JsonFormat.text)
-      }else{
-        showToast("Please Select a Language First")
-      }
-    } catch (error) {
-      console.log(error);
-    }
+    //   if(REQ_URL != undefined){
+    //     const response = await FileSystem.uploadAsync(REQ_URL, fileUri, {
+    //       fieldName: 'file',
+    //       httpMethod: 'POST',
+    //       uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+    //       headers: { 
+    //         Authorization: "Bearer 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", 
+    //        }
+    //     });
+    //     console.log(response.body)
+    //     if(response.status == 503){
+    //       setLoading(false)
+    //       setModalVisible(false)
+    //       showToast(`Model Loading Please Wait`)
+    //     }
+    //     let result = response.body
+    //     let txtFormat = result.slice(0, result.length);
+    //     let JsonFormat = JSON.parse(txtFormat)
+
+    //     setTranscript(JsonFormat.text)  
+    //     setLoading(false)
+    //   }else{
+    //     showToast("Please Select a Language First")
+    //   }
+    // } catch (error) {
+    //   console.log(error);
+    // }
+
+    
+      setModalVisible(true)
+
   }
 
   async function stopRecording() {
@@ -167,12 +178,6 @@ export default function App() {
       : null }
     </View>
 
-    
-    <View>
-      {transcript?
-      <Text style={styles.statusTxt}>{transcript}</Text>
-      : null }
-    </View>
       <View style={styles.select}>
         <RNPickerSelect
             onValueChange={(language) => handleLanguageSelect(language)}
@@ -183,6 +188,54 @@ export default function App() {
             ]}
           style={pickerSelectStyles}
         />
+      </View>
+      <View>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => {
+            Alert.alert('Modal has been closed.');
+            setModalVisible(!modalVisible);
+          }}>
+          <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                {!loading?
+                  <>
+                  <View style={styles.buttonView}>
+                      <Pressable
+                        style={styles.buttonClose}
+                        onPress={() => {
+                          setModalVisible(!modalVisible)
+                          setTranscript(null)
+                          }}>
+                        <Image source={require('./assets/cancel.png')}/>
+                      </Pressable>
+                    </View>
+                    <TextInput
+                      style={styles.transcriptInput}
+                      multiline={true}
+                      numberOfLines={4}
+                      onChangeText={(text) => setTranscript(text)}
+                      value={transcript}
+                      />
+                      <Pressable
+                        style={styles.buttonTranslate}
+                        onPress={() => {
+                          setModalVisible(!modalVisible)
+                          setTranscript(null)
+                          }}>
+                        <Text style={styles.textStyle}>Translate</Text>
+                      </Pressable>
+                  </>
+                :
+                  <View>
+                    <Text>Sending Request</Text>
+                  </View>
+                }
+              </View>
+          </View>
+        </Modal>
       </View>
 
       <View>
@@ -230,7 +283,62 @@ const styles = StyleSheet.create({
   statusTxt: {
     fontSize: 16,
     marginBottom: 30
-  }
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 22,
+    width: "100%",
+    height: "100%",
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalView: {
+    width: "90%",
+    margin: 10,
+    padding: 10,
+    backgroundColor: 'white',
+    borderRadius: 5,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  transcriptInput: {
+    borderWidth: 1,
+    borderColor: "#000",
+    width: "95%",
+    marginBottom: 10,
+    padding: 5,
+    margin: 10
+  },
+  buttonView:{
+    display: 'flex',
+    justifyContent: 'flex-end',
+    flexDirection: 'row',
+    width: "100%"
+  },
+  buttonClose: {
+    backgroundColor: '#2196F3',
+    padding: 10,
+    borderRadius: 5
+  },
+  buttonTranslate: {
+    backgroundColor: '#00A15B',
+    padding: 10,
+    borderRadius: 5, 
+    width: '95%'
+  },
+  textStyle: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
 });
 
 const pickerSelectStyles = StyleSheet.create({
