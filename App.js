@@ -6,7 +6,7 @@ import { StyleSheet, TouchableOpacity, Text, View, Image, ToastAndroid, Modal, T
 import RNPickerSelect from 'react-native-picker-select';
 
 
-const IGBO_API_URL = "https://api-inference.huggingface.co/models/AstralZander/igbo_ASR"
+const IGBO_API_URL = "https://api-inference.huggingface.co/models/AstralZander/xlsr-finetune-igbo"
 const YORUBA_API_URL = "https://api-inference.huggingface.co/models/steja/whisper-small-yoruba"
 const HAUSA_API_URL = "https://api-inference.huggingface.co/models/DrishtiSharma/whisper-large-v2-hausa"
 
