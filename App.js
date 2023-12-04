@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {Audio} from 'expo-av'
 import * as FileSystem from 'expo-file-system'
-import { StyleSheet, TouchableOpacity, Text, View, Image, ToastAndroid, Modal, TextInput, Pressable } from 'react-native';
+import { StyleSheet, TouchableOpacity, Text, View, Image, ToastAndroid, Modal, TextInput, Pressable, PanResponder } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 
 
@@ -25,7 +25,8 @@ const ensureDirExists = async () =>{
   }
 }
 
-export default function App() {
+export default function App(props) {
+  const [timeForInactivityInSecond, setTimeForInactivityInSecond] = useState(5)
   const [loading, setLoading] = useState(null)
   const [recording, setRecording] = useState(null)
   const [isRecording, setIsRecording] = useState(false)
@@ -33,6 +34,115 @@ export default function App() {
   const [audioPermissions, setAudioPermissions] = useState(null)
   const [language, setLanguage] = useState(null)
   const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    // resetInactivityTimeout()
+    initialCalls()
+  }, [])
+
+    function initialCalls(){
+      queryHau("sample1.flac").then((response) => {
+        // console.log(JSON.stringify(response));
+      });
+      queryIgb("sample1.flac").then((response) => {
+        // console.log(JSON.stringify(response));
+      });
+      queryYor("sample1.flac").then((response) => {
+        // console.log(JSON.stringify(response));
+      });
+
+      queryHAEN({"inputs": "Kana"}).then((response) => {
+        // console.log(JSON.stringify(response));
+      });
+
+      queryYREN({"inputs": "Ogun"}).then((response) => {
+        // console.log(JSON.stringify(response));
+      });
+
+      queryIGEN({"inputs": "Chidi"}).then((response) => {
+        // console.log(JSON.stringify(response));
+      });
+    }
+
+    async function queryYor(filename) {
+      const response = await fetch(
+        YORUBA_API_URL,
+        {
+          headers: { Authorization: "Bearer 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" },
+          method: "POST",
+          body: filename,
+        }
+      );
+      const result = await response.json();
+      return result;
+    }
+
+    async function queryHau(filename) {
+      const response = await fetch(
+        HAUSA_API_URL,
+        {
+          headers: { Authorization: "Bearer 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" },
+          method: "POST",
+          body: filename,
+        }
+      );
+      const result = await response.json();
+      return result;
+    }
+
+    async function queryIgb(filename) {
+      const response = await fetch(
+        IGBO_API_URL,
+        {
+          headers: { Authorization: "Bearer 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" },
+          method: "POST",
+          body: filename,
+        }
+      );
+      const result = await response.json();
+      return result;
+    }
+
+    async function queryHAEN(data) {
+      const response = await fetch(
+        HAU_ENG_URL,
+        {
+          headers: { Authorization: "Bearer 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" },
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      );
+      const result = await response.json();
+      return result;
+    }
+
+    async function queryYREN(data) {
+      const response = await fetch(
+        YOR_ENG_URL,
+        {
+          headers: { Authorization: "Bearer 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" },
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      );
+      const result = await response.json();
+      return result;
+    }
+
+    async function queryIGEN(data) {
+      const response = await fetch(
+        IGB_ENG_URL,
+        {
+          headers: { Authorization: "Bearer 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" },
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      );
+      const result = await response.json();
+      return result;
+    }
+    
+ 
 
   useEffect(() => {
     async function getPermission() {
@@ -108,6 +218,7 @@ export default function App() {
             Authorization: "Bearer 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", 
            }
         });
+        setLoading(false)
         console.log(response.body)
         if(response.status == 503){
           setLoading(false)
@@ -171,6 +282,7 @@ export default function App() {
       const dest = recordingsDir + fileName
       await FileSystem.moveAsync({ from: recordingUri, to: dest })
       
+      setLoading(true)
       uploadAudio(dest)
 
       //Playing the Audio Recording
@@ -203,7 +315,9 @@ export default function App() {
 
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} 
+    // {...panResponder.panHandlers}
+    >
     <View>
       {isRecording?
       <Text style={styles.statusTxt}>Recording Audio</Text>
@@ -238,7 +352,8 @@ export default function App() {
                       <Pressable
                         style={styles.buttonClose}
                         onPress={() => {
-                          setModalVisible(!modalVisible)
+                          setModalVisible(false)
+                          setLoading(false)
                           setTranscript(null)
                           }}>
                         <Image style={styles.closeIcon} source={require('./assets/cancel.png')}/>
@@ -260,9 +375,22 @@ export default function App() {
                       </Pressable>
                   </>
                 :
-                  <View>
-                    <Image style={styles.loadingImg} source={require('./assets/work-in-progress.gif')}/>
-                  </View>
+                  <>
+                    <View style={styles.buttonView}>
+                      <Pressable
+                        style={styles.buttonClose}
+                        onPress={() => {
+                          setModalVisible(false)
+                          setLoading(false)
+                          setTranscript(null)
+                          }}>
+                        <Image style={styles.closeIcon} source={require('./assets/cancel.png')}/>
+                      </Pressable>
+                    </View>
+                    <View>
+                      <Image style={styles.loadingImg} source={require('./assets/work-in-progress.gif')}/>
+                    </View>
+                  </>
                 }
               </View>
           </View>
