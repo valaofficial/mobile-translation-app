@@ -35,14 +35,9 @@ export default function App(props) {
   const [language, setLanguage] = useState(null)
   const [modalVisible, setModalVisible] = useState(false);
 
-  useEffect(() => {
-    // resetInactivityTimeout()
-    initialCalls()
-  }, [])
-
     function initialCalls(){
       queryHau("sample1.flac").then((response) => {
-        // console.log(JSON.stringify(response));
+        console.log(JSON.stringify(response));
       });
       queryIgb("sample1.flac").then((response) => {
         // console.log(JSON.stringify(response));
@@ -52,7 +47,7 @@ export default function App(props) {
       });
 
       queryHAEN({"inputs": "Kana"}).then((response) => {
-        // console.log(JSON.stringify(response));
+        console.log(JSON.stringify(response));
       });
 
       queryYREN({"inputs": "Ogun"}).then((response) => {
@@ -63,6 +58,11 @@ export default function App(props) {
         // console.log(JSON.stringify(response));
       });
     }
+
+    useEffect(() => {
+      initialCalls()
+    }, [])
+    
 
     async function queryYor(filename) {
       const response = await fetch(
